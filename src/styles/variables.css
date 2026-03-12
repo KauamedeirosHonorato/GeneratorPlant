@@ -1,0 +1,97 @@
+/* ========================================
+   DESIGN TOKENS — GENERATORPLANT
+   ======================================== */
+
+:root {
+  /* ── Colors ── */
+  --bg-primary: #0a0e17;
+  --bg-secondary: #111827;
+  --bg-tertiary: #1a2236;
+  --bg-card: #151d2e;
+  --bg-input: #0d1321;
+  --bg-canvas: #1a1f2e;
+
+  --border-primary: #1e2a3e;
+  --border-secondary: #2a3a52;
+  --border-focus: #3b82f6;
+  --border-subtle: rgba(255, 255, 255, 0.06);
+
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-tertiary: #64748b;
+  --text-muted: #475569;
+
+  --accent-blue: #3b82f6;
+  --accent-blue-hover: #2563eb;
+  --accent-blue-glow: rgba(59, 130, 246, 0.25);
+  --accent-emerald: #10b981;
+  --accent-emerald-glow: rgba(16, 185, 129, 0.2);
+  --accent-amber: #f59e0b;
+  --accent-red: #ef4444;
+  --accent-purple: #8b5cf6;
+
+  /* Zone palette — 12 distinct colors for rooms */
+  --zone-1: #e67e73;    /* Coral/Red */
+  --zone-2: #f0c75e;    /* Gold/Yellow */
+  --zone-3: #7ecba1;    /* Seafoam Green */
+  --zone-4: #6ba3d6;    /* Sky Blue */
+  --zone-5: #d4a0d9;    /* Lavender */
+  --zone-6: #e8a87c;    /* Peach */
+  --zone-7: #82c8c8;    /* Teal */
+  --zone-8: #c4d884;    /* Lime */
+  --zone-9: #d9917e;    /* Terracotta */
+  --zone-10: #a8b4e0;   /* Periwinkle */
+  --zone-11: #e6c8a0;   /* Tan */
+  --zone-12: #9ed6b5;   /* Mint */
+
+  /* ── Typography ── */
+  --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+
+  --fs-xs: 0.6875rem;    /* 11px */
+  --fs-sm: 0.75rem;      /* 12px */
+  --fs-base: 0.8125rem;  /* 13px */
+  --fs-md: 0.875rem;     /* 14px */
+  --fs-lg: 1rem;         /* 16px */
+  --fs-xl: 1.125rem;     /* 18px */
+  --fs-2xl: 1.5rem;      /* 24px */
+
+  --fw-light: 300;
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+  --fw-extrabold: 800;
+
+  /* ── Spacing ── */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+
+  /* ── Sizing ── */
+  --sidebar-width: 340px;
+  --header-height: 52px;
+  --footer-height: 32px;
+
+  /* ── Borders & Radius ── */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+
+  /* ── Shadows ── */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --shadow-glow-blue: 0 0 20px rgba(59, 130, 246, 0.15);
+
+  /* ── Transitions ── */
+  --transition-fast: 150ms ease;
+  --transition-base: 250ms ease;
+  --transition-smooth: 350ms cubic-bezier(0.4, 0, 0.2, 1);
+}

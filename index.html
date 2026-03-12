@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="GeneratorPlant — Gerador profissional de plantas baixas empresariais com medidas personalizadas, malha modular e exportação." />
+  <title>GeneratorPlant — Gerador de Plantas Baixas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+</head>
+<body>
+  <div id="app">
+    <aside id="sidebar" class="sidebar">
+      <div class="sidebar-scroll">
+        <div class="sidebar-header">
+          <div class="sidebar-logo">
+            <span class="logo-icon">⬡</span>
+            <div>
+              <h1 class="logo-title">GeneratorPlant</h1>
+              <p class="logo-subtitle">PLANTA BAIXA — TÉRREO</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Actions Bar -->
+        <section class="sidebar-section sidebar-actions-bar">
+          <div class="action-buttons-row">
+            <button id="undoBtn" class="btn btn-icon" title="Desfazer (Ctrl+Z)" disabled>↩</button>
+            <button id="redoBtn" class="btn btn-icon" title="Refazer (Ctrl+Shift+Z)" disabled>↪</button>
+            <div class="action-divider"></div>
+            <button id="saveBtn" class="btn btn-icon" title="Salvar">💾</button>
+            <button id="loadBtn" class="btn btn-icon" title="Carregar">📂</button>
+            <button id="downloadBtn" class="btn btn-icon" title="Baixar JSON">⬇️</button>
+            <div class="action-divider"></div>
+            <select id="templateSelect" class="template-select" title="Templates">
+              <option value="" disabled selected>📋 Templates</option>
+            </select>
+          </div>
+        </section>
+
+        <!-- Lot Dimensions -->
+        <section class="sidebar-section">
+          <h2 class="section-title"><span class="section-icon">📐</span> Dimensões do Lote</h2>
+          <div class="lot-info-grid">
+            <div class="input-group">
+              <label for="lotWidth">Largura (m)</label>
+              <input type="number" id="lotWidth" value="39" min="5" max="200" step="0.5" />
+            </div>
+            <div class="input-group">
+              <label for="lotDepth">Profundidade (m)</label>
+              <input type="number" id="lotDepth" value="27" min="5" max="200" step="0.5" />
+            </div>
+          </div>
+          <div class="lot-summary">
+            <div class="lot-summary-row"><span>Lote:</span><strong id="lotDimensionsLabel">39m x 27m</strong></div>
+            <div class="lot-summary-row"><span>Área do Terreno:</span><strong id="lotAreaLabel">1.053,00 m²</strong></div>
+          </div>
+        </section>
+
+        <!-- Grid -->
+        <section class="sidebar-section">
+          <h2 class="section-title"><span class="section-icon">⊞</span> Malha Estrutural</h2>
+          <div class="grid-module-control">
+            <label for="gridModule">Dimensão do Módulo (m)</label>
+            <div class="slider-container">
+              <input type="range" id="gridModule" min="1" max="12" step="0.5" value="6" />
+              <div class="slider-value" id="gridModuleValue">6.0 x 6.0</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Zones -->
+        <section class="sidebar-section">
+          <h2 class="section-title"><span class="section-icon">🏗️</span> Zonas / Cômodos</h2>
+          <div id="zoneList" class="zone-list"></div>
+          <button id="addZoneBtn" class="btn btn-primary btn-add-zone"><span>＋</span> Adicionar Zona</button>
+        </section>
+
+        <!-- Furniture -->
+        <section class="sidebar-section">
+          <h2 class="section-title"><span class="section-icon">🪑</span> Mobiliário</h2>
+          <div id="furniturePalette" class="furniture-palette"></div>
+        </section>
+
+        <!-- Tools: Measure -->
+        <section class="sidebar-section">
+          <h2 class="section-title"><span class="section-icon">🔧</span> Ferramentas</h2>
+          <div class="tools-row">
+            <button id="measureBtn" class="btn btn-tool">📏 Medir</button>
+            <button id="clearMeasureBtn" class="btn btn-tool">🗑️ Limpar</button>
+          </div>
+          <p class="section-note">Clique em 2 pontos no canvas para medir. Espaço + arrastar = pan.</p>
+        </section>
+
+        <!-- Streets -->
+        <section class="sidebar-section">
+          <h2 class="section-title"><span class="section-icon">🛣️</span> Ruas do Entorno</h2>
+          <div class="street-inputs">
+            <div class="input-group"><label for="streetTop">Superior</label><input type="text" id="streetTop" value="Rua Néo Alves Martins" /></div>
+            <div class="input-group"><label for="streetBottom">Inferior</label><input type="text" id="streetBottom" /></div>
+            <div class="input-group"><label for="streetLeft">Esquerda</label><input type="text" id="streetLeft" value="Av. Getúlio Vargas" /></div>
+            <div class="input-group"><label for="streetRight">Direita</label><input type="text" id="streetRight" /></div>
+          </div>
+        </section>
+
+        <!-- Export -->
+        <section class="sidebar-section">
+          <h2 class="section-title"><span class="section-icon">📥</span> Exportação</h2>
+          <div class="export-buttons">
+            <button id="exportPng" class="btn btn-export">🖼️ PNG</button>
+            <button id="exportSvg" class="btn btn-export">📄 SVG</button>
+            <button id="exportPdf" class="btn btn-export">📑 PDF</button>
+          </div>
+        </section>
+      </div>
+    </aside>
+
+    <main id="mainArea" class="main-area">
+      <header class="canvas-header">
+        <div class="canvas-header-left">
+          <span class="header-icon">🏛️</span>
+          <span id="headerAddress" class="header-address">Av. Getúlio Vargas x Rua Néo Alves Martins</span>
+        </div>
+        <div class="canvas-header-right">
+          <button id="zoomIn" class="btn btn-icon" title="Zoom In">＋</button>
+          <span id="zoomLevel" class="zoom-label">100%</span>
+          <button id="zoomOut" class="btn btn-icon" title="Zoom Out">−</button>
+          <button id="resetView" class="btn btn-icon" title="Resetar Vista">⟲</button>
+        </div>
+      </header>
+      <div id="canvasContainer" class="canvas-container"></div>
+      <footer class="canvas-footer">
+        <span id="statusCoords" class="status-item">X: 0.0m  Y: 0.0m</span>
+        <span id="statusScale" class="status-item">Escala: 1px = 0.1m</span>
+        <span id="statusZones" class="status-item">Zonas: 0</span>
+      </footer>
+    </main>
+  </div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
