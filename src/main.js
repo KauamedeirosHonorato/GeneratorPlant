@@ -9,7 +9,7 @@ import FloorPlanEngine from './canvas/FloorPlanEngine.js';
 let engine;
 
 function init() {
-  const sidebar = new Sidebar();
+  const sidebarUI = new Sidebar();
   engine = new FloorPlanEngine('canvasContainer');
 
   // Zoom controls
@@ -21,6 +21,21 @@ function init() {
   document.getElementById('exportPng').addEventListener('click', () => engine.exportPNG());
   document.getElementById('exportSvg').addEventListener('click', () => engine.exportSVG());
   document.getElementById('exportPdf').addEventListener('click', () => engine.exportPDF());
+
+  // Sidebar toggle (mobile)
+  const sidebar = document.getElementById('sidebar');
+  const toggle = document.getElementById('sidebarToggle');
+  toggle.addEventListener('click', () => {
+    sidebar.classList.toggle('open');
+    toggle.classList.toggle('active');
+  });
+  // Close sidebar when clicking on canvas area (mobile)
+  document.getElementById('mainArea').addEventListener('click', () => {
+    if (sidebar.classList.contains('open')) {
+      sidebar.classList.remove('open');
+      toggle.classList.remove('active');
+    }
+  });
 
   // Keyboard shortcuts
   document.addEventListener('keydown', (e) => {

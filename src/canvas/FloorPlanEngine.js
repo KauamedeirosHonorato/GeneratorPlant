@@ -79,6 +79,12 @@ export default class FloorPlanEngine {
     lg.appendChild(this._el('stop', { offset: '100%', 'stop-color': '#000', 'stop-opacity': '0.05' }));
     defs.appendChild(lg);
 
+    // Clip-path for lot boundary (will be updated on render)
+    this._lotClip = this._el('clipPath', { id: 'lot-clip' });
+    this._lotClipRect = this._el('rect', { x: 0, y: 0, width: 0, height: 0 });
+    this._lotClip.appendChild(this._lotClipRect);
+    defs.appendChild(this._lotClip);
+
     this.svg.appendChild(defs);
 
     this.bgLayer = this._el('g', { id: 'bg-layer' });
@@ -174,6 +180,61 @@ export default class FloorPlanEngine {
       e.preventDefault();
       state.setZoom(state.zoomLevel + (e.deltaY > 0 ? -0.05 : 0.05));
     }, { passive: false });
+
+    // ── Touch events for mobile ──
+    this._lastTouchDist = 0;
+    this.svg.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 2) {
+        // Pinch-to-zoom start
+        e.preventDefault();
+        this._lastTouchDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+        return;
+      }
+      if (e.touches.length === 1) {
+        const touch = e.touches[0];
+        // Two-finger pan or single touch on bg = pan
+        if (!e.target.closest('[data-zone-id]') && !e.target.closest('#furniture-layer')) {
+          e.preventDefault();
+          this._panning = true;
+          this._panStart = { x: touch.clientX, y: touch.clientY, panX: state.panX, panY: state.panY };
+        }
+      }
+    }, { passive: false });
+
+    this.svg.addEventListener('touchmove', (e) => {
+      if (e.touches.length === 2) {
+        e.preventDefault();
+        const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+        if (this._lastTouchDist > 0) {
+          const delta = (dist - this._lastTouchDist) * 0.005;
+          state.setZoom(state.zoomLevel + delta);
+        }
+        this._lastTouchDist = dist;
+        return;
+      }
+      if (e.touches.length === 1) {
+        const touch = e.touches[0];
+        if (this._panning) {
+          e.preventDefault();
+          const dx = (touch.clientX - this._panStart.x) / state.zoomLevel;
+          const dy = (touch.clientY - this._panStart.y) / state.zoomLevel;
+          state.panX = this._panStart.panX + dx;
+          state.panY = this._panStart.panY + dy;
+          this._applyPan();
+        }
+        if (this._dragging) {
+          e.preventDefault();
+          this._handleDrag({ clientX: touch.clientX, clientY: touch.clientY });
+        }
+      }
+    }, { passive: false });
+
+    this.svg.addEventListener('touchend', (e) => {
+      this._lastTouchDist = 0;
+      if (this._panning) { this._panning = false; }
+      if (this._dragging) { state.endBatch(); this._dragging = null; this._guides = []; this.guidesLayer.innerHTML = ''; }
+      if (this._resizing) { state.endBatch(); this._resizing = null; }
+    });
   }
 
   _svgToMeters(e) {
@@ -264,6 +325,13 @@ export default class FloorPlanEngine {
     const totalW = wPx + this.margin * 2;
     const totalH = hPx + this.margin * 2 + bottomExtra;
 
+    // Update clip-path to lot dimensions
+    this._lotClipRect.setAttribute('width', wPx);
+    this._lotClipRect.setAttribute('height', hPx);
+
+    // Auto-clamp zones that exceed lot bounds
+    this._clampAllZones();
+
     this.svg.setAttribute('width', totalW);
     this.svg.setAttribute('height', totalH);
     this.svg.setAttribute('viewBox', `0 0 ${totalW} ${totalH}`);
@@ -288,6 +356,22 @@ export default class FloorPlanEngine {
     if (ss) ss.textContent = `Módulo: ${state.gridModule.toFixed(1)}m | ${s.toFixed(0)}px/m`;
   }
 
+  // Auto-clamp zones to fit within lot
+  _clampAllZones() {
+    const maxModW = state.lotWidth / state.gridModule;
+    const maxModH = state.lotDepth / state.gridModule;
+    state.zones.forEach(z => {
+      // Clamp size first
+      if (z.w > maxModW) z.w = maxModW;
+      if (z.h > maxModH) z.h = maxModH;
+      // Clamp position
+      if (z.x + z.w > maxModW) z.x = Math.max(0, maxModW - z.w);
+      if (z.y + z.h > maxModH) z.y = Math.max(0, maxModH - z.h);
+      if (z.x < 0) z.x = 0;
+      if (z.y < 0) z.y = 0;
+    });
+  }
+
   // ── Background ──
   _renderBackground(w, h) {
     this.bgLayer.innerHTML = '';
@@ -297,36 +381,36 @@ export default class FloorPlanEngine {
     this.bgLayer.appendChild(this._el('rect', { width: w, height: h, fill: 'url(#grid-bg)', opacity: '0.5' }));
   }
 
-  // ── Streets ──
+  // ── Streets (name only, dimensions are shown by axis lines) ──
   _renderStreetLabels(wPx, hPx) {
     this.streetLayer.innerHTML = '';
     const s = state.streets, m = this.margin;
-    const fontAttr = { 'text-anchor': 'middle', fill: '#94a3b8', 'font-size': '12', 'font-weight': '600', 'font-family': 'Inter, sans-serif', 'letter-spacing': '1' };
+    const fontAttr = { 'text-anchor': 'middle', fill: '#64748b', 'font-size': '11', 'font-weight': '600', 'font-family': 'Inter, sans-serif', 'letter-spacing': '1.5' };
 
     if (s.top) {
-      this.streetLayer.appendChild(this._el('rect', { x: m, y: 8, width: wPx, height: m - 25, fill: '#0f172a', rx: 6, 'fill-opacity': 0.8 }));
-      const t = this._el('text', { x: m + wPx / 2, y: m / 2, ...fontAttr });
-      t.textContent = `${s.top.toUpperCase()} (${state.lotWidth.toFixed(2)}m)`;
+      this.streetLayer.appendChild(this._el('rect', { x: m + 20, y: 10, width: wPx - 40, height: 22, fill: '#0f172a', rx: 4, 'fill-opacity': 0.9 }));
+      const t = this._el('text', { x: m + wPx / 2, y: 26, ...fontAttr });
+      t.textContent = s.top.toUpperCase();
       this.streetLayer.appendChild(t);
     }
     if (s.bottom) {
-      const yP = m + hPx + 18;
-      this.streetLayer.appendChild(this._el('rect', { x: m, y: yP, width: wPx, height: m - 25, fill: '#0f172a', rx: 6, 'fill-opacity': 0.8 }));
-      const t = this._el('text', { x: m + wPx / 2, y: yP + (m - 25) / 2 + 4, ...fontAttr });
-      t.textContent = `${s.bottom.toUpperCase()} (${state.lotWidth.toFixed(2)}m)`;
+      const yP = m + hPx + m - 32;
+      this.streetLayer.appendChild(this._el('rect', { x: m + 20, y: yP, width: wPx - 40, height: 22, fill: '#0f172a', rx: 4, 'fill-opacity': 0.9 }));
+      const t = this._el('text', { x: m + wPx / 2, y: yP + 16, ...fontAttr });
+      t.textContent = s.bottom.toUpperCase();
       this.streetLayer.appendChild(t);
     }
     if (s.left) {
-      this.streetLayer.appendChild(this._el('rect', { x: 8, y: m, width: m - 25, height: hPx, fill: '#0f172a', rx: 6, 'fill-opacity': 0.8 }));
-      const t = this._el('text', { x: 0, y: 0, ...fontAttr, transform: `translate(${m / 2}, ${m + hPx / 2}) rotate(-90)` });
-      t.textContent = `${s.left.toUpperCase()} (${state.lotDepth.toFixed(2)}m)`;
+      this.streetLayer.appendChild(this._el('rect', { x: 10, y: m + 20, width: 22, height: hPx - 40, fill: '#0f172a', rx: 4, 'fill-opacity': 0.9 }));
+      const t = this._el('text', { x: 0, y: 0, ...fontAttr, transform: `translate(24, ${m + hPx / 2}) rotate(-90)` });
+      t.textContent = s.left.toUpperCase();
       this.streetLayer.appendChild(t);
     }
     if (s.right) {
-      const xP = m + wPx + 18;
-      this.streetLayer.appendChild(this._el('rect', { x: xP, y: m, width: m - 25, height: hPx, fill: '#0f172a', rx: 6, 'fill-opacity': 0.8 }));
-      const t = this._el('text', { x: 0, y: 0, ...fontAttr, transform: `translate(${xP + (m - 25) / 2}, ${m + hPx / 2}) rotate(90)` });
-      t.textContent = `${s.right.toUpperCase()} (${state.lotDepth.toFixed(2)}m)`;
+      const xP = m + wPx + m - 32;
+      this.streetLayer.appendChild(this._el('rect', { x: xP, y: m + 20, width: 22, height: hPx - 40, fill: '#0f172a', rx: 4, 'fill-opacity': 0.9 }));
+      const t = this._el('text', { x: 0, y: 0, ...fontAttr, transform: `translate(${xP + 18}, ${m + hPx / 2}) rotate(90)` });
+      t.textContent = s.right.toUpperCase();
       this.streetLayer.appendChild(t);
     }
   }
@@ -338,6 +422,10 @@ export default class FloorPlanEngine {
     this.lotLayer.appendChild(this._el('rect', { x: 0, y: 0, width: wPx, height: hPx, fill: '#111827', stroke: 'none' }));
     // Lot boundary
     this.lotLayer.appendChild(this._el('rect', { x: 0, y: 0, width: wPx, height: hPx, fill: 'none', stroke: '#ef4444', 'stroke-width': 2.5, 'stroke-dasharray': '12,6' }));
+
+    // Apply clip-path to zones and furniture so they don't overflow lot
+    this.zonesLayer.setAttribute('clip-path', 'url(#lot-clip)');
+    this.furnitureLayer.setAttribute('clip-path', 'url(#lot-clip)');
   }
 
   // ── Grid (smart density) ──
