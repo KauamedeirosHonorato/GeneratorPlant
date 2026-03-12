@@ -224,7 +224,28 @@ class AppState {
   getLotArea() { return this.lotWidth * this.lotDepth; }
 
   // ═══════ GRID ═══════
-  setGridModule(v) { this.gridModule = Math.max(1, Math.min(12, Number(v) || 6)); this.emit('grid-change'); this.emit('render'); this._saveHistory(); }
+  setGridModule(v) {
+    const oldMod = this.gridModule;
+    const newMod = Math.max(1, Math.min(12, Number(v) || 6));
+    if (newMod === oldMod) return;
+
+    // Rescale all zones proportionally: convert module-units to meters, then back
+    const ratio = oldMod / newMod;
+    this.zones.forEach(z => {
+      z.x = z.x * ratio;
+      z.y = z.y * ratio;
+      z.w = Math.max(0.5, z.w * ratio);
+      z.h = Math.max(0.5, z.h * ratio);
+    });
+
+    // Rescale furniture (already in meters, no change needed)
+
+    this.gridModule = newMod;
+    this.emit('grid-change');
+    this.emit('zones-change');
+    this.emit('render');
+    this._saveHistory();
+  }
 
   // ═══════ STREETS ═══════
   setStreet(side, name) { this.streets[side] = name; this.emit('render'); }
